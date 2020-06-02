@@ -20,7 +20,7 @@ Wait for a bit ;)
     * core files.
     * `KoreanTextGeneator` in `generator.py` wraps TRDG generators
       * use with same parameters as TRDG generators, but with extra meta-parameter `source` 
-      * `source` should have a value among `("string", "random", "dict", "wiki")`
+      * `source` should have a value among `source_options = ("string", "random", "dict", "wiki", "file")`
  * `demo.py`
     * testing scripts for development
     * refer to this when you want to call `kotdg` with code

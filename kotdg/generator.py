@@ -5,7 +5,7 @@ from trdg.generators import *
 from trdg.string_generator \
     import create_strings_from_wikipedia, create_strings_from_dict
 
-from .utils import ko_create_strings_randomly, ko_load_dict
+from .utils import ko_load_dict, ko_create_strings_randomly, ko_create_strings_from_dict
 
 # basedir of kotdg. ( i.e. basedir = 'kotdg/' )
 basedir = Path(os.path.realpath(__file__)).parent
@@ -82,7 +82,7 @@ args_list = {
     'wiki': ('minimum_length',)
 }
 
-source_options = ("string", "random", "dict", "wiki")
+source_options = ("string", "random", "dict", "wiki", "file")
 # TODO How to single character?
 
 
@@ -109,7 +109,7 @@ class KoreanTextGenerator:
         if source not in source_options:
             raise ValueError('Wrong source type! \nChoose among ("string", "random", "dict", "wiki").')
 
-        if source == "dict":
+        if source == "dict" or source == "file":
             # Load dict to self.dict
             self.dict = ko_load_dict(self.sargs['dict'])
 
@@ -143,6 +143,10 @@ class KoreanTextGenerator:
             return create_strings_from_wikipedia(
                 self.sargs['minimum_length'], 1000, self.args['language']
             )
+
+        elif self.source == 'file':
+            # 1000??
+            return self.dict
 
         else:
             raise RuntimeError

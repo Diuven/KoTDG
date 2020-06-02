@@ -51,13 +51,20 @@ def kotdg_gen():
     string_input = [[x] for x in demo_text.split(" ")]
     random.shuffle(string_input)
 
+
+    gen5 = KoreanTextGenerator("file", fonts=fonts, count=3, dict='words.txt')
+
+    for e in gen5:
+        print(e)
+        e[0].show()
+
     gen4 = KoreanTextGenerator("wiki", fonts=fonts, count=3)
 
     for d in gen4:
         print(d)
         d[0].show()
 
-    gen3 = KoreanTextGenerator("dict", fonts=fonts, count=3, dict='ko.txt')
+    gen3 = KoreanTextGenerator("dict", fonts=fonts, count=3, dict='words.txt')
 
     for c in gen3:
         print(c)
@@ -73,7 +80,7 @@ def kotdg_gen():
 
     for a in gen1:
         print(a)
-        a[0].save(out_path / (a[1][0] + '.jpg'))
+        # a[0].save(out_path / (a[1][0] + '.jpg'))
         a[0].show()
 
     print("Done!")
