@@ -17,7 +17,7 @@ Run `python run.py` to build datasets.
 
 * `resources/`
   * fonts, dictionaries, and background images.
-    * font file should be `.ttf` file 
+    * font file should be `.ttf` file
 * `kotdg/`
   * core files.
   * `KoreanTextGeneator` in `generator.py` wraps TRDG generators

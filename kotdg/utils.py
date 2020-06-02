@@ -10,6 +10,28 @@ basedir = Path(os.path.realpath(__file__)).parent
 resourcedir = (basedir / '../resources/').resolve()
 
 
+def ko_decompose(character):
+    assert type(character) is str and len(character) == 1
+    # assert ord(u'가') <= chr(character) and chr(character) <= ord(u'힣')
+
+    fir = [x for x in "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"]
+    snd = [x for x in "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ"]
+    thr = [chr(0x3130)] + [x for x in "ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"]
+    
+    val = ord(character) - ord(u'가')
+
+    res = []
+    l1, l2, l3 = len(fir), len(snd), len(thr)
+
+    res.append(thr[val%l3]); val = val // l3
+    res.append(snd[val%l2]); val = val // l2
+    res.append(fir[val])
+
+    res.reverse()
+
+    return res
+
+
 def ko_load_dict(dict_path):
     """ Read the dictionary file and returns all words in it. """
     lang_dict = []
