@@ -100,7 +100,8 @@ ENV/
 # mypy
 .mypy_cache/
 
-.vscode/*
+.vscode/
+.idea/
 
 # Image ouputs
 out/

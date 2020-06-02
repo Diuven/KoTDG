@@ -1,6 +1,11 @@
-from trdg.generators import *
 import os
 from pathlib import Path
+
+from trdg.generators import *
+from trdg.string_generator \
+    import create_strings_from_wikipedia, create_strings_from_dict
+
+from .utils import ko_create_strings_randomly, ko_load_dict
 
 # basedir of kotdg. ( i.e. basedir = 'kotdg/' )
 basedir = Path(os.path.realpath(__file__)).parent
@@ -8,6 +13,7 @@ resourcedir = (basedir / '../resources/').resolve()
 
 default_args = {
     'count': -1,
+    'length': 1,
     'minimum_length': 1,
     'allow_variable': False,
     'use_letters': True,
@@ -35,13 +41,12 @@ default_args = {
     'fit': False,
     'output_mask': False,
     'word_split': False,
-    'image_dir': str(basedir / "../images"),
+    'image_dir': str(resourcedir / "images"),
 }
 
 args_list = {
     'common': (
         'count',
-        'length',
         'fonts',
         'language',
         'size',
@@ -66,52 +71,89 @@ args_list = {
         'image_dir',
     ),
     'random': (
+        'length',
         'allow_variable',
         'use_letters',
         'use_numbers',
         'use_symbols',
     ),
     'string': ('strings',),
-    'dict': ('allow_variable', 'dict',),
+    'dict': ('length', 'allow_variable', 'dict',),
     'wiki': ('minimum_length',)
 }
 
+source_options = ("string", "random", "dict", "wiki")
 # TODO How to single character?
-# TODO check if all works fine esp. dict
 
-class KoreanTextGenerator():
+
+class KoreanTextGenerator:
     """ Wrapping class of trdg generators """
 
-    def __init__(self, source = "random", **kargs):
+    def __init__(self, source="random", **kwargs):
+        # Feed default arguments
+        self.args = dict(kwargs)
         for key, val in default_args.items():
-            if key not in kargs:
-                kargs[key] = val
-        self.args = dict(kargs)
+            if key not in self.args:
+                self.args[key] = val
         source = source.lower().strip()
         self.source = source
 
-        toremove = []
+        # Separate distinct arguments
+        self.sargs = {}
         for key in self.args:
-            if (key not in args_list['common']) and (key not in args_list[source]):
-                toremove.append(key)
-        for key in toremove:
+            if (key not in args_list['common']) and (key not in args_list['string']):
+                self.sargs[key] = self.args[key]
+        for key in self.sargs:
             del self.args[key]
 
-        if source == "random":
-            self.generator = GeneratorFromRandom(**self.args)
-        elif source == "string":
-            self.generator = GeneratorFromStrings(**self.args)
-        elif source == "dict":
-            self.generator = GeneratorFromDict(**self.args)
-        elif source == "wiki":
-            self.generator = GeneratorFromWikipedia(**self.args)
+        if source not in source_options:
+            raise ValueError('Wrong source type! \nChoose among ("string", "random", "dict", "wiki").')
+
+        if source == "dict":
+            # Load dict to self.dict
+            self.dict = ko_load_dict(self.sargs['dict'])
+
+        # Generate generator
+        self.args['strings'] = self.generate_strings()
+
+        self.generator = GeneratorFromStrings(**self.args)
+
+    def generate_strings(self):
+        # Generate strings from respective source
+        if self.source == 'string':
+            return self.args['strings']
+
+        elif self.source == 'random':
+            return ko_create_strings_randomly(
+                self.sargs['length'],
+                self.sargs['allow_variable'],
+                1000,
+                self.sargs['use_letters'],
+                self.sargs['use_numbers'],
+                self.sargs['use_symbols'],
+                self.args['language']
+            )
+
+        elif self.source == 'dict':
+            return create_strings_from_dict(
+                self.sargs['length'], self.sargs['allow_variable'], 1000, self.dict
+            )
+
+        elif self.source == 'wiki':
+            return create_strings_from_wikipedia(
+                self.sargs['minimum_length'], 1000, self.args['language']
+            )
+
         else:
-            raise ValueError('Wrong source type! \nChoose among ("random", "string", "dict", "wiki").')
-    
-        pass
+            raise RuntimeError
+
+    def next(self):
+        if self.generator.generated_count % 1000 == 999:
+            self.generator.strings = self.generate_strings()
+        return self.generator.next()
 
     def __iter__(self):
         return self.generator
 
     def __next__(self):
-        return self.generator.next()
+        return self.next()
