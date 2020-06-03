@@ -105,3 +105,6 @@ ENV/
 
 # Image ouputs
 out/
+
+# notebookx
+**/*.ipynb
