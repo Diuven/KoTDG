@@ -11,6 +11,7 @@ resourcedir = (basedir / '../resources/').resolve()
 
 
 def ko_decompose(character):
+    """ Decompose single hangul character to letters """
     assert type(character) is str and len(character) == 1
     # assert ord(u'가') <= chr(character) and chr(character) <= ord(u'힣')
 
@@ -27,7 +28,7 @@ def ko_decompose(character):
     res.append(snd[val%l2]); val = val // l2
     res.append(fir[val])
 
-    res.reverse()
+    res = tuple(reversed(res))
 
     return res
 

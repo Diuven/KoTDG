@@ -1,6 +1,7 @@
 # Building dataset for Text Recognition
 
 from kotdg.generator import KoreanTextGenerator
+from kotdg.utils import ko_decompose
 from pathlib import Path
 from glob import glob
 import os
@@ -16,8 +17,11 @@ def make_2350_clean():
         size: 32x32 (RGB)
         characters: common hangul 2350 (완성형 2350자)
         No background, no color, no distortion, no orientation, no blur, etc
-        label: value, index(%08d), font
-        small label: value
+        label: decomposed value, original value, index(%08d), font
+        small label: decomposed value
+        ex:
+            label: (ㅆ,ㅓ,ㄻ), 썲, 0036541, NanumGothic
+            small: ㅆ,ㅓ,ㄻ
     """
     print("Building 2350_clean dataset!")
 
@@ -40,19 +44,22 @@ def make_2350_clean():
                     dat[0].save(name)
                     idx += 1
 
-                    label = "%s, %07d, %s\n" % (dat[1], idx, Path(font).stem)
+                    ans = ko_decompose(dat[1])
+                    ans = ', '.join(ans)
+                    label = "(%s), %s, %08d, %s\n" % (ans, dat[1], idx, Path(font).stem)
+
                     label_file.write(label)
-                    small_file.write(dat[1] + '\n')
+                    small_file.write(ans + '\n')
 
                 print("Finished font: %s (%d/%d)" % (font, pos+1, len(all_fonts)))
-                sys.stdout.flush()
 
     print("Total number of images: %08d" % idx)
-    print("Done!")
+    print("")
 
 
 def main():
     make_2350_clean()
+    print("Done!")
 
 
 if __name__ == "__main__":
