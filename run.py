@@ -1,7 +1,10 @@
+#! /usr/bin/python3
 import os, errno
 
 import random as rnd
 import sys
+from pathlib import Path
+from glob import glob
 
 from tqdm import tqdm
 from trdg.string_generator import (
@@ -14,6 +17,9 @@ from trdg.utils import load_dict, load_fonts
 from trdg.data_generator import FakeTextDataGenerator
 from multiprocessing import Pool
 from kotdg.parser import argument_parser
+
+base_dir = Path(os.path.realpath(__file__)).parent
+resource_dir = base_dir / "resources/"
 
 
 def main():
@@ -31,27 +37,13 @@ def main():
         if e.errno != errno.EEXIST:
             raise
 
-    # Creating word list
-    if args.dict:
-        lang_dict = []
-        if os.path.isfile(args.dict):
-            with open(args.dict, "r", encoding="utf8", errors="ignore") as d:
-                lang_dict = [l for l in d.read().splitlines() if len(l) > 0]
-        else:
-            sys.exit("Cannot open dict")
-    else:
-        lang_dict = load_dict(args.language)
-
     # Create font (path) list
     if args.font_dir:
-        fonts = [
-            os.path.join(args.font_dir, p)
-            for p in os.listdir(args.font_dir)
-            if os.path.splitext(p)[1] == ".ttf"
-        ]
+        fonts = list(glob( str(Path(args.font_dir) / "*.ttf") ))
     elif args.font:
-        if os.path.isfile(args.font):
-            fonts = [args.font]
+        font_path = resource_dir / 'fonts' / args.font
+        if os.path.isfile(str(font_path)):
+            fonts = [str(font_path)]
         else:
             sys.exit("Cannot open font")
     else:
@@ -60,14 +52,14 @@ def main():
     # Creating synthetic sentences (or word)
     strings = []
 
-    if args.use_wikipedia:
+    if args.wikipedia:
         strings = create_strings_from_wikipedia(args.length, args.count, args.language)
     elif args.input_file != "":
         strings = create_strings_from_file(args.input_file, args.count)
-    elif args.random_sequences:
+    elif args.random:
         strings = create_strings_randomly(
             args.length,
-            args.random,
+            args.variable_length,
             args.count,
             args.include_letters,
             args.include_numbers,
@@ -82,8 +74,19 @@ def main():
         ):
             args.name_format = 2
     else:
+        # Creating word list
+        lang_dict = []
+        if args.dict:
+            dict_path = resource_dir / "dicts" / args.dict
+            if os.path.isfile(dict_path):
+                with open(dict_path, "r", encoding="utf8", errors="ignore") as d:
+                    lang_dict = [l for l in d.read().splitlines() if len(l) > 0]
+            else:
+                sys.exit("Cannot open dict")
+        else:
+            lang_dict = load_dict(args.language)
         strings = create_strings_from_dict(
-            args.length, args.random, args.count, lang_dict
+            args.length, args.variable_length, args.count, lang_dict
         )
 
     if args.case == "upper":
