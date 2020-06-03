@@ -46,19 +46,6 @@ def ko_load_dict(dict_path):
     return lang_dict
 
 
-def ko_create_strings_from_dict(length, allow_variable, lang_dict):
-    """
-        Create all strings from the dictionary sequentially
-    """
-
-    dict_len = len(lang_dict)
-    strings = []
-    for idx in range(0, dict_len):
-        current_string = lang_dict[idx]
-        strings.append(current_string)
-    return strings
-
-
 def ko_create_strings_randomly(length, allow_variable, count, let, num, sym, lang):
     """
         Create all strings by randomly sampling from a pool of characters.

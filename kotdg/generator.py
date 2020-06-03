@@ -5,7 +5,7 @@ from trdg.generators import *
 from trdg.string_generator \
     import create_strings_from_wikipedia, create_strings_from_dict
 
-from .utils import ko_load_dict, ko_create_strings_randomly, ko_create_strings_from_dict
+from .utils import ko_load_dict, ko_create_strings_randomly
 
 # basedir of kotdg. ( i.e. basedir = 'kotdg/' )
 basedir = Path(os.path.realpath(__file__)).parent

@@ -11,12 +11,13 @@ from trdg.string_generator import (
     create_strings_from_dict,
     create_strings_from_file,
     create_strings_from_wikipedia,
-    create_strings_randomly,
 )
 from trdg.utils import load_dict, load_fonts
 from trdg.data_generator import FakeTextDataGenerator
 from multiprocessing import Pool
+
 from kotdg.parser import argument_parser
+from kotdg.utils import ko_create_strings_randomly
 
 base_dir = Path(os.path.realpath(__file__)).parent
 resource_dir = base_dir / "resources/"
@@ -57,7 +58,7 @@ def main():
     elif args.input_file != "":
         strings = create_strings_from_file(args.input_file, args.count)
     elif args.random:
-        strings = create_strings_randomly(
+        strings = ko_create_strings_randomly(
             args.length,
             args.variable_length,
             args.count,
@@ -73,18 +74,16 @@ def main():
                 args.include_symbols,
         ):
             args.name_format = 2
-    else:
+    elif args.dict:
         # Creating word list
         lang_dict = []
-        if args.dict:
-            dict_path = resource_dir / "dicts" / args.dict
-            if os.path.isfile(dict_path):
-                with open(dict_path, "r", encoding="utf8", errors="ignore") as d:
-                    lang_dict = [l for l in d.read().splitlines() if len(l) > 0]
-            else:
-                sys.exit("Cannot open dict")
+        dict_path = resource_dir / "dicts" / args.dict
+        if os.path.isfile(dict_path):
+            with open(dict_path, "r", encoding="utf8", errors="ignore") as d:
+                lang_dict = [l for l in d.read().splitlines() if len(l) > 0]
         else:
-            lang_dict = load_dict(args.language)
+            sys.exit("Cannot open dict")
+
         strings = create_strings_from_dict(
             args.length, args.variable_length, args.count, lang_dict
         )
