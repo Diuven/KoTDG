@@ -106,7 +106,6 @@ def argument_parser():
         "--dict",
         "--dictionary",
         type=str,
-        nargs="?",
         help="Specify the name of the dictionary to be used.\
             Each lines are separated by .splitlines(), and the orders of the lines are scrambled.",
         default="words.txt"

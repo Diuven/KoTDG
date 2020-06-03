@@ -1,5 +1,6 @@
 #! /usr/bin/python3
-import os, errno
+import os
+import errno
 
 import random as rnd
 import sys
@@ -41,6 +42,8 @@ def main():
     # Create font (path) list
     if args.font_dir:
         fonts = list(glob( str(Path(args.font_dir) / "*.ttf") ))
+        if len(fonts) == 0:
+            raise ValueError("No fonts found from the given directory %s" % args.font_dir)
     elif args.font:
         font_path = resource_dir / 'fonts' / args.font
         if os.path.isfile(str(font_path)):
@@ -87,6 +90,8 @@ def main():
         strings = create_strings_from_dict(
             args.length, args.variable_length, args.count, lang_dict
         )
+    else:
+        raise RuntimeError("Source option broke... somehow")
 
     if args.case == "upper":
         strings = [x.upper() for x in strings]
