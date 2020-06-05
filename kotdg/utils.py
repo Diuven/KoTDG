@@ -10,6 +10,7 @@ basedir = Path(os.path.realpath(__file__)).parent
 resourcedir = (basedir / '../resources/').resolve()
 
 
+# Ideally you wouldn't need this
 def ko_decompose(character):
     """ Decompose single hangul character to letters """
     assert type(character) is str and len(character) == 1

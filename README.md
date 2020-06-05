@@ -36,7 +36,7 @@ Behaviors of the options are generally same as the original [TRDG](https://githu
   * `--input_file <path>` will load a file from the given path.
     * Note that `<path>` is not related to `resources/`, unlike other cases.
     * Lines are sequentially used.
-    * e.g. `./run.py --input_file resources/dicts/single.txt -c 5`
+    * e.g. `./run.py --input_file resources/dicts/ksx1001.txt -c 5`
   * `--random` will load randomly picked letters in the corresponding pool
     * 한글은 유니코드 0xAC00부터 0xD7A3 영역에서 임의 추출합니다. 이는 가능한 모든 조합형 글자의 영역입니다.
     * `--include_**` options will configure what letters can be included in the pool
@@ -48,7 +48,7 @@ Behaviors of the options are generally same as the original [TRDG](https://githu
     * The default value (even if this options is not set) is `'NanumGothic.ttf'`.
     * Note: all fonts should be `.ttf` format.
     * e.g. `./run.py -c 5 --font "Maplestory Bold.ttf"`
-  * `--font_dir <dir>` will specift the directory where fonts are located
+  * `--font_dir <dir>` specifies the directory where fonts are located
     * All fonts in the directory will be tried to be used.
     * Note that, of course, the total number of generated images is equal to the number passed to the `--count`.
     * e.g. `./run.py -c 5 --font_dir resources/fonts`
@@ -69,6 +69,12 @@ Behaviors of the options are generally same as the original [TRDG](https://githu
   * `--text_color "color_code"` specifies the color of the text.
     * Color code should be in hex type (e.g. `#00FFFF`), and it must be enclosed by double quotes. ("")
     * e.g. `./run.py -c 5 --text_color "#00FFFF"`
+* Output options
+  * `--name_format` specifies the format of the generated file names.
+    * `<text>`: text written on the image, `<idx>`: integer index of the image, `<ext>`: extension of the image
+    * 0: `<text>_<idx>.<ext>`
+    * 1: `<idx>_<text>.<ext>`
+    * 2: `<idx>.<ext>`, and `labels.txt` containing `<idx>`-`<text>` mapping 
 
 ### `kotdg` module
 
