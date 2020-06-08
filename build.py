@@ -26,8 +26,7 @@ def make_ksx_clean():
     print("Building ksx_clean dataset!")
 
     out_path = out_base / "ksx_clean"
-    if not os.path.isdir(out_path):
-        os.mkdir(out_path)
+    out_path.mkdir(parents=True, exist_ok=False)
 
     idx = 0
     label_path = out_path / "labels.csv"
