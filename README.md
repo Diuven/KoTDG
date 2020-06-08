@@ -46,7 +46,8 @@ Behaviors of the options are generally same as the original [TRDG](https://githu
   * `--font <name>` specifies which font to be used
     * Font will be loaded from `resources/fonts`
     * The default value (even if this options is not set) is `'NanumGothic.ttf'`.
-    * Note: all fonts should be `.ttf` format.
+    * Note: all fonts should be `.ttf` or `.otf` format.
+      * TRDG uses `PIL.Imagefont.truetype` function. Check corresponding documents for compatibility.
     * e.g. `./run.py -c 5 --font "Maplestory Bold.ttf"`
   * `--font_dir <dir>` specifies the directory where fonts are located
     * All fonts in the directory will be tried to be used.
