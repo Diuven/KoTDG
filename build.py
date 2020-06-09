@@ -9,12 +9,13 @@ import sys
 
 out_base = Path("out")
 all_fonts = glob("resources/fonts/*")
+size = 224 # Same with Resnet / VGG
 
 
 def make_ksx_clean():
     """
         Simple single character images
-        size: 32x32 (RGB)
+        size: sizexsize (RGB)
         characters: common hangul 2350 (KSX 1001 완성형 2350자)
         No background, no color, no distortion, no orientation, no blur, etc
         label: decomposed value, original value, index(%08d), font
@@ -36,7 +37,7 @@ def make_ksx_clean():
         with open(small_path, "x") as small_file:
 
             for (pos, font) in enumerate(all_fonts):
-                gen = KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=2350, width=32)
+                gen = KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=2350, width=size, size=size)
 
                 for dat in gen:
                     name = out_path / ('%08d.jpg' % idx)

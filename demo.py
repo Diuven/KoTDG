@@ -6,6 +6,7 @@ from glob import glob
 import os
 import random
 from kotdg.generator import KoreanTextGenerator
+from kotdg.utils import ko_decompose
 
 demo_text = r"모든 사람은 자유로운 존재로 태어났고, 똑같은 존엄과 권리를 가진다. 사람은 이성과 양심을 타고 났으므로 서로를 형제애의 정신으로 대해야 한다." 
 
@@ -86,6 +87,52 @@ def kotdg_gen():
     print("Done!")
 
 
+def hd_gen():
+
+    idx = 0
+    sz = 128
+
+    font = all_fonts[32]
+
+    gen1 = KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=5, width=sz, size=sz)
+
+    for dat in gen1:
+        name = out_path / ('%08d.jpg' % idx)
+        # dat[0].save(name)
+        dat[0].show()
+        idx += 1
+
+        dec = ko_decompose(dat[1])
+        dec = ', '.join(dec)
+        label = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
+
+        print(label)
+        
+        break
+
+
+
+    gen2 = KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=5, width=sz//2, size=sz//2)
+
+    for dat in gen2:
+        name = out_path / ('%08d.jpg' % idx)
+        # dat[0].save(name)
+        dat[0].show()
+        idx += 1
+
+        dec = ko_decompose(dat[1])
+        dec = ', '.join(dec)
+        label = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
+
+        print(label)
+        
+        break
+
+
+
+
+
 if __name__ == "__main__":
     # vanilla_demo()
-    kotdg_gen()
+    # kotdg_gen()
+    hd_gen()
