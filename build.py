@@ -24,6 +24,7 @@ parser.add_argument('--train-only', action='store_true', help="Generate training
 # parser.add_argument('--backg', action='store_true', help="Generate images with various backgrounds")
 parser.add_argument('--outdir', type=str, default='out', help="Root directory for saving generated files")
 parser.add_argument('--name', type=str, help="Name of the dataset (folder named after this will be generated in outdir)")
+parser.add_argument('--group-font', action='store_true', help="Group images with font. i.e. images with same font will not be splitted")
 
 
 def make_ksx_clean():
@@ -71,56 +72,49 @@ def make_ksx_clean():
     print("")
 
 
-def generate(getgen, out_path, fonts):
+def generate(gen, out_path, index, fixed_font=None):
+    label_path = out_path / 'labels.csv'
+    info_path = out_path / 'info.csv'
+
+    if fixed_font:
+        def genfunc():
+            for x in gen: yield x, fixed_font
+    else:
+        def genfunc():
+            yield from gen
+
+    with open(label_path, "a") as label_file, open(info_path, "a") as info_file:
+        for dat, font in genfunc():
+            name = out_path / ('%08d.jpg' % index)
+            dat[0].save(name)
+
+            dec = ko_decompose(dat[1])
+            dec = ', '.join(dec)
+            info = "%s, (%s), %08d, %s\n" % (dat[1], dec, index, font)
+
+            label_file.write(dat[1] + '\n')
+            info_file.write(info)
+            index += 1
+
+    return index
+
+
+def generate_font(getgen, out_path, fonts):
     print("Generating to %s" % out_path)
     out_path.mkdir(parents=True, exist_ok=False)
 
-    label_path = out_path / 'labels.csv'
-    info_path = out_path / 'info.csv'
-    idx = 0
+    index = 0
 
-    with open(label_path, "x") as label_file, open(info_path, "x") as info_file:
-        for pos, font in enumerate(fonts):
-            gen = getgen(font)
-        
-            for dat in gen:
-                name = out_path / ('%08d.jpg' % idx)
-                dat[0].save(name)
-                idx += 1
-
-                dec = ko_decompose(dat[1])
-                dec = ', '.join(dec)
-                info = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
-
-                info_file.write(info)
-                label_file.write(dat[1] + '\n')
-
-            print("Finished font: %s (%d/%d)" % (font, pos+1, len(fonts)))
+    for pos, font in enumerate(fonts):
+        index = generate(getgen(font), out_path, index, Path(font).stem)
+        print("Finished font: %s (%d/%d)" % (font, pos+1, len(fonts)))
     
-    return idx
+    return index
 
 
-
-
-def main(args):
-    print("Generating images!")
-
-    dsname = args.name if args.name is not None else args.dataset
-
-    out_path = Path(args.outdir) / dsname
-
-    if args.fonts <= 0:
-        args.fonts = len(all_fonts)
-    fonts = random.sample(all_fonts, args.fonts)
-    random.shuffle(fonts)
-
-    if args.train_only:
-        raise NotImplementedError("sorry hehe")
-    
-    # split along fonts
-
+def font_split(args, fonts, out_path):
+    print("Splitting dataset with fonts")
     getgen = lambda font: KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=2350, width=args.size, size=args.size)
-
 
     train_len = args.fonts * split_ratio[0] // sum(split_ratio)
     valid_len = (args.fonts - train_len) * split_ratio[1] // sum(split_ratio[1:])
@@ -139,9 +133,90 @@ def main(args):
         raise RuntimeError("Somehow at least one of the fonts list is empty. %s %s %s" % (train_fonts, valid_fonts, tests_fonts))
 
     count = 0
-    count += generate(getgen, out_path / 'train', train_fonts)
-    count += generate(getgen, out_path / 'valid', valid_fonts)
-    count += generate(getgen, out_path / 'tests', tests_fonts)
+    count += generate_font(getgen, out_path / 'train', train_fonts)
+    count += generate_font(getgen, out_path / 'valid', valid_fonts)
+    count += generate_font(getgen, out_path / 'tests', tests_fonts)
+
+    return count
+
+
+def random_split(args, fonts, out_path):
+    generators = []
+    for font in fonts:
+        gen = KoreanTextGenerator("file", fonts=[font], dict='ksx1001.txt', count=2350, width=args.size, size=args.size, shuffle=True)
+        generators.append(gen)
+
+    class RandomGenerator:
+        def __init__(self, generators, count):
+            self.generators = list(generators)
+            self.count = count
+            self.made = 0
+        
+        def __next__(self):
+            if self.count <= self.made:
+                raise StopIteration
+
+            while len(self.generators) > 0:
+                gen = random.sample(self.generators, 1)[0]
+                try:
+                    val, font = next(gen), gen.args['fonts'][0]
+                    break
+                except StopIteration:
+                    self.generators.remove(gen)
+
+            self.made += 1
+            return val, font
+
+        def __iter__(self):
+            return self
+    
+    total = 2350 * len(fonts)
+    traincnt = total * split_ratio[0] // sum(split_ratio)
+    validcnt = (total - traincnt) * split_ratio[1] // sum(split_ratio[1:])
+    testscnt = total - traincnt - validcnt
+
+    index = 0
+
+    print("Making trainset! (%d)" % traincnt)
+    train_path = out_path / 'train'
+    train_path.mkdir(parents=True, exist_ok=False)
+    traingen = RandomGenerator(generators, traincnt)
+    index += generate(traingen, train_path, 0)
+
+    print("Making validset! (%d)" % validcnt)
+    valid_path = out_path / 'valid'
+    valid_path.mkdir(parents=True, exist_ok=False)
+    validgen = RandomGenerator(traingen.generators, validcnt)
+    index += generate(validgen, valid_path, 0)
+
+    print("Making testset! (%d)" % testscnt)
+    tests_path = out_path / 'tests'
+    tests_path.mkdir(parents=True, exist_ok=False)
+    testsgen = RandomGenerator(validgen.generators, testscnt)
+    index += generate(testsgen, tests_path, 0)
+
+    return index
+
+
+def main(args):
+    print("Generating images!")
+
+    dsname = args.name if args.name is not None else args.dataset
+
+    out_path = Path(args.outdir) / dsname
+
+    if args.fonts <= 0:
+        args.fonts = len(all_fonts)
+    fonts = random.sample(all_fonts, args.fonts)
+    random.shuffle(fonts)
+
+    if args.train_only:
+        raise NotImplementedError("sorry hehe")
+
+    if args.group_font:
+        count = font_split(args, fonts, out_path)
+    else:
+        count = random_split(args, fonts, out_path)
 
     print("Total number of images: %08d" % count)
 
