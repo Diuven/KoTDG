@@ -20,7 +20,7 @@ parser.add_argument('dataset', type=str, choices=['ksx'], default='ksx')
 parser.add_argument('--size', type=int, default=224, help='Size of generated images (square)')
 parser.add_argument('--fonts', type=int, default=-1, help="Number of fonts to use. If less than one, it will use all available fonts")
 # parser.add_argument('--color', action='store_true', help="Generate colorized texts")
-parser.add_argument('--split', action='store_true', default=True, help="Split dataset into train/validation/test")
+parser.add_argument('--train-only', action='store_true', help="Generate training dataset only. It generates train/valid/tests dataset as a default")
 # parser.add_argument('--backg', action='store_true', help="Generate images with various backgrounds")
 parser.add_argument('--outdir', type=str, default='out', help="Root directory for saving generated files")
 parser.add_argument('--name', type=str, help="Name of the dataset (folder named after this will be generated in outdir)")
@@ -76,9 +76,10 @@ def generate(getgen, out_path, fonts):
     out_path.mkdir(parents=True, exist_ok=False)
 
     label_path = out_path / 'labels.csv'
+    info_path = out_path / 'info.csv'
     idx = 0
 
-    with open(label_path, "x") as label_file:
+    with open(label_path, "x") as label_file, open(info_path, "x") as info_file:
         for pos, font in enumerate(fonts):
             gen = getgen(font)
         
@@ -87,11 +88,11 @@ def generate(getgen, out_path, fonts):
                 dat[0].save(name)
                 idx += 1
 
-                # dec = ko_decompose(dat[1])
-                # dec = ', '.join(dec)
-                # label = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
+                dec = ko_decompose(dat[1])
+                dec = ', '.join(dec)
+                info = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
 
-                # label_file.write(label)
+                info_file.write(info)
                 label_file.write(dat[1] + '\n')
 
             print("Finished font: %s (%d/%d)" % (font, pos+1, len(fonts)))
@@ -112,6 +113,9 @@ def main(args):
         args.fonts = len(all_fonts)
     fonts = random.sample(all_fonts, args.fonts)
     random.shuffle(fonts)
+
+    if args.train_only:
+        raise NotImplementedError("sorry hehe")
     
     # split along fonts
 
