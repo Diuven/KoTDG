@@ -4,11 +4,11 @@ from kotdg.generator import KoreanTextGenerator
 from kotdg.utils import ko_decompose
 from pathlib import Path
 from glob import glob
+from tqdm import tqdm
 import os
 import sys
 import argparse
 import random
-
 
 
 all_fonts = glob("resources/fonts/*")
@@ -79,12 +79,14 @@ def generate(gen, out_path, index, fixed_font=None):
     if fixed_font:
         def genfunc():
             for x in gen: yield x, fixed_font
+        count = gen.generator.count
     else:
         def genfunc():
             yield from gen
+        count = gen.count
 
     with open(label_path, "a") as label_file, open(info_path, "a") as info_file:
-        for dat, font in genfunc():
+        for dat, font in tqdm(genfunc(), total=count):
             name = out_path / ('%08d.jpg' % index)
             dat[0].save(name)
 
@@ -177,19 +179,19 @@ def random_split(args, fonts, out_path):
 
     index = 0
 
-    print("Making trainset! (%d)" % traincnt)
+    print("Making trainset! (%d of %d)" % (traincnt, total))
     train_path = out_path / 'train'
     train_path.mkdir(parents=True, exist_ok=False)
     traingen = RandomGenerator(generators, traincnt)
     index += generate(traingen, train_path, 0)
 
-    print("Making validset! (%d)" % validcnt)
+    print("Making validset! (%d of %d)" % (validcnt, total))
     valid_path = out_path / 'valid'
     valid_path.mkdir(parents=True, exist_ok=False)
     validgen = RandomGenerator(traingen.generators, validcnt)
     index += generate(validgen, valid_path, 0)
 
-    print("Making testset! (%d)" % testscnt)
+    print("Making testset! (%d of %d)" % (testscnt, total))
     tests_path = out_path / 'tests'
     tests_path.mkdir(parents=True, exist_ok=False)
     testsgen = RandomGenerator(validgen.generators, testscnt)
