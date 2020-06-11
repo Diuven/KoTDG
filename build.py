@@ -11,7 +11,7 @@ import argparse
 import random
 
 
-all_fonts = glob("resources/fonts/*")
+all_fonts = glob("resources/fonts/*.[o.t]tf")
 split_ratio = (7, 2, 1)
 
 

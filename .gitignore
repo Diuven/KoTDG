@@ -108,3 +108,5 @@ out/
 
 # notebookx
 **/*.ipynb
+
+resources/fonts/
