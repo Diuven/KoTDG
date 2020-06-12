@@ -11,7 +11,7 @@ resourcedir = (basedir / '../resources/').resolve()
 
 
 # Ideally you wouldn't need this
-def ko_decompose(character):
+def decompose_hangul(character):
     """ Decompose single hangul character to letters """
     assert type(character) is str and len(character) == 1
     # assert ord(u'가') <= chr(character) and chr(character) <= ord(u'힣')

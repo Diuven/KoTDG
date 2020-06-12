@@ -1,169 +1,67 @@
-import os
 from pathlib import Path
+# loading files
 
-from trdg.generators import *
-from trdg.string_generator \
-    import create_strings_from_wikipedia, create_strings_from_dict
-
-from .utils import ko_load_dict, ko_create_strings_randomly
-import random
-
-# basedir of kotdg. ( i.e. basedir = 'kotdg/' )
-basedir = Path(os.path.realpath(__file__)).parent
-resourcedir = (basedir / '../resources/').resolve()
-
-default_args = {
-    'count': -1,
-    'length': 1,
-    'minimum_length': 1,
-    'allow_variable': False,
-    'use_letters': True,
-    'use_numbers': True,
-    'use_symbols': True,
-    # Nanum Gothic as a default font
-    'fonts': [ str(resourcedir / 'fonts/NanumGothic.ttf') ],
-    'language': "ko",
-    'size': 32,
-    'skewing_angle': 0,
-    'random_skew': False,
-    'blur': 0,
-    'random_blur': False,
-    'background_type': 0,
-    'distorsion_type': 0,
-    'distorsion_orientation': 0,
-    'is_handwritten': False,
-    'width': -1,
-    'alignment': 1,
-    'text_color': "#282828",
-    'orientation': 0,
-    'space_width': 1.0,
-    'character_spacing': 0,
-    'margins': (5, 5, 5, 5),
-    'fit': False,
-    'output_mask': False,
-    'word_split': False,
-    'image_dir': str(resourcedir / "images"),
-    'shuffle': False
-}
-
-args_list = {
-    'common': (
-        'count',
-        'fonts',
-        'language',
-        'size',
-        'skewing_angle',
-        'random_skew',
-        'blur',
-        'random_blur',
-        'background_type',
-        'distorsion_type',
-        'distorsion_orientation',
-        'is_handwritten',
-        'width',
-        'alignment',
-        'text_color',
-        'orientation',
-        'space_width',
-        'character_spacing',
-        'margins',
-        'fit',
-        'output_mask',
-        'word_split',
-        'image_dir',
-    ),
-    'random': (
-        'length',
-        'allow_variable',
-        'use_letters',
-        'use_numbers',
-        'use_symbols',
-    ),
-    'string': ('strings',),
-    'dict': ('length', 'allow_variable', 'dict',),
-    'wiki': ('minimum_length',)
-}
-
-source_options = ("string", "random", "dict", "wiki", "file")
+from trdg.data_generator import FakeTextDataGenerator
+from trdg.computer_text_generator import _generate_horizontal_text as synthetic_generate
 
 
 class KoreanTextGenerator:
-    """ Wrapping class of trdg generators """
+    def __init__(self, count, out_dir, size, threads,  strings, fonts, features=None):
+        """
+        인자:
+            전체 pool을 주는 인자들. e.g. fonts, strings ... 길이, ...?
+            그 pool의 각 원소에 대해 랜덤하게 얹을 특성들. e.g. color, background, distortion ... (or
 
-    def __init__(self, source="random", **kwargs):
-        # Feed default arguments
-        self.args = dict(kwargs)
-        for key, val in default_args.items():
-            if key not in self.args:
-                self.args[key] = val
-        source = source.lower().strip()
-        self.source = source
+            모든 원소들이 가져야 하는 특성들. e.g. 사이즈, 위치,
+            스레드 개수
 
-        # Separate distinct arguments
-        self.sargs = {}
-        for key in self.args:
-            if (key not in args_list['common']) and (key not in args_list['string']):
-                self.sargs[key] = self.args[key]
-        for key in self.sargs:
-            del self.args[key]
+            복원 추출 / 비복원 추출.
+            개수
+            count (새로운 generator를 주는 식으로 할까? 아니면 그냥 field를 바꾸는 식으로 할까?
 
-        if source not in source_options:
-            raise ValueError('Wrong source type! \nChoose among ("string", "random", "dict", "wiki").')
-
-        if source == "dict" or source == "file":
-            # Load dict to self.dict
-            self.dict = ko_load_dict(self.sargs['dict'])
-
-        self.args['strings'] = self.generate_strings()
-
-        # Generate generator
-        self.generator = GeneratorFromStrings(**self.args)
-
-    def generate_strings(self):
-        # Generate strings from respective source
-        if self.source == 'string':
-            res = self.args['strings']
-
-        elif self.source == 'random':
-            res = ko_create_strings_randomly(
-                self.sargs['length'],
-                self.sargs['allow_variable'],
-                1000,
-                self.sargs['use_letters'],
-                self.sargs['use_numbers'],
-                self.sargs['use_symbols'],
-                self.args['language']
-            )
-
-        elif self.source == 'dict':
-            res = create_strings_from_dict(
-                self.sargs['length'], self.sargs['allow_variable'], 1000, self.dict
-            )
-
-        elif self.source == 'wiki':
-            res = create_strings_from_wikipedia(
-                self.sargs['minimum_length'], 1000, self.args['language']
-            )
-
-        elif self.source == 'file':
-            # 1000??
-            res = self.dict
-
-        else:
-            raise RuntimeError
+            반환값
+                이미지, metadata (font, value, index?)
+        """
+        """
+            KoreanTextGenerator class only takes care of 'generating' according to the given parameters.
+            Note that the caller should take care of the split, strings (and its shuffling), or possible random features
             
-        if self.sargs['shuffle']:
-            random.shuffle(res)
+        Returns:
+            an iterator yielding (image, meta={'font': str, 'value': str, 'decomposed': str})
+            iterates in order. i.e. for font in fonts: for string in strings: yield (data)
 
-        return res
+        Parameters:
+            count: number of images to generate. if -1 makes full set of images (all possible (string, font) pairs)
+            out_dir: directory to place generated images & labels
+            size: a tuple representing size of the images. (H, W). In case of W = -1, it should be automatically set... but not now
+            threads: number of threads to use when generating images
 
-    def next(self):
-        if self.generator.generated_count % 1000 == 999:
-            self.generator.strings = self.generate_strings()
-        return self.generator.next()
+            strings: an iterable for strings.
+
+            As you might know, strings can be a generator, instead of an explicit list of strings
+
+        """
+        if 0 <= count:
+            raise NotImplementedError("Count should be -1 for now")
+        if size[0] < 0 or size[1] < 0:
+            raise ValueError("Not a proper size: %s" % size )
+        if threads != 1:
+            raise NotImplementedError("Threads should be 1 for now")
+
+        self.out_dir = Path(out_dir)
+        self.out_dir.mkdir(parents=True, exist_ok=False)
+
+        color = "#282828"
+
+        for font in fonts:
+            for string in strings:
+                # We're not using save for FTDG here, so there's some placeholder parameters
+                # img = synthetic_generate(string, font, color)
+                
+        pass
 
     def __iter__(self):
-        return self.generator
+        return self
 
     def __next__(self):
-        return self.next()
+        pass
