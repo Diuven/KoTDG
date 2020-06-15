@@ -1,6 +1,7 @@
 from pathlib import Path
 from random import shuffle, random
 from tqdm import tqdm
+from multiprocessing import Pool
 from glob import glob
 import os
 
@@ -41,16 +42,17 @@ def get_image(text, font, height, width, background_type, color, blur):
         image_dir=images_dir,
     )
 
+def _get_bg_num(total):
+    return min(3, int(random() * (2 + total)))
 
 class KoreanTextGeneratorIterator:
-    def __init__(self, count, size, strings, fonts, features=None):
+    def __init__(self, count, size, strings, fonts, features=dict()):
         if 0 <= count:
             raise NotImplementedError("Count should be -1 for now")
         if size[0] < 0 or size[1] < 0:
             raise ValueError("Not a proper size: %s" % size)
 
-        self.count = count
-        self.made = 0
+        # self.count = count
         self.size = tuple(size)
 
         self.color = "#282828"
@@ -60,7 +62,6 @@ class KoreanTextGeneratorIterator:
             self.get_color = features['get_color']
 
         self.bg_num = len(glob(str(images_dir / '*')))
-        self.get_background = lambda: min(3, int(random() * (2 + self.bg_num)))
 
         if 'blur' in features:
             self.blur = features['blur']
@@ -73,57 +74,66 @@ class KoreanTextGeneratorIterator:
                 self.pairs.append((string, font))
         shuffle(self.pairs)
 
+    def gen_meta(self):
+        for text, font in self.pairs:
+            yield text, Path(font).stem
+
+    def gen_args(self):
+        for text, font in self.pairs:
+            background = _get_bg_num(self.bg_num)
+            if hasattr(self, 'get_color'):
+                color = self.get_color()
+            else:
+                color = self.color
+            yield text, font, self.size[0], self.size[1], background, color, self.blur
+
     def __iter__(self):
         return self
 
     def __next__(self):
-        if len(self.pairs) <= self.made:
-            raise StopIteration
-
-        text, font = self.pairs[self.made]
-        background = self.get_background()
-
-        if self.get_color is not None:
-            color = self.get_color()
-        else:
-            color = self.color
-
-        img = get_image(text, font, self.size[0], self.size[1], background, color, self.blur)
-        self.made += 1
-
-        return img, {"font": Path(font).stem, "text": text}
+        for args in self.gen_args():
+            img = get_image(*args)
+            text, font = args[0], args[1]
+            yield img, (text, Path(font).stem)
 
     def __len__(self):
         return len(self.pairs)
 
 
 class KoreanTextGenerator:
-    def __init__(self, out_dir, threads, size, strings, fonts, features=None):
+    def __init__(self, out_dir, threads, size, strings, fonts, features=dict()):
         self.gen = KoreanTextGeneratorIterator(-1, size, strings, fonts, features)
         self.out_dir = Path(out_dir)
-        self.labels = [None] * len(self.gen)
+        self.threads = threads
 
-        if threads != 1:
-            raise NotImplementedError("Threads should be 1 for now")
-
-    def save(self, index, img, meta):
+    def save(self, index, img):
         name = self.out_dir / ("%08d.jpg" % index)
-        self.labels[index] = meta
         img.save(name)
+
+    def _make(self, tup):
+        index, args = tup
+        img = get_image(*args)
+        self.save(index, img)
 
     def generate(self):
         print("Generating!")
         self.out_dir.mkdir(parents=True, exist_ok=False)
 
-        for index, (img, meta) in tqdm(enumerate(self.gen), total=len(self.gen)):
-            self.save(index, img, meta)
+        # for index, (img, meta) in tqdm(enumerate(self.gen), total=len(self.gen)):
+        #     self._save(index, img, meta)
+        with Pool(self.threads) as pool:
+            res = list(tqdm(
+                pool.imap_unordered(self._make, enumerate(self.gen.gen_args()))
+            ))
+
+        labels = [tup for tup in self.gen.gen_meta()]
 
         with open(self.out_dir / "labels.txt", "wt") as label_file:
-            for idx in range(len(self.labels)):
-                meta = self.labels[idx]
-                label_file.write(meta["text"] + '\n')
+            for idx in range(len(labels)):
+                meta = labels[idx]
+                label_file.write(meta[0] + '\n')
 
         print("Done!")
 
-        return self.labels
+        return labels
 
