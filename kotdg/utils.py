@@ -38,7 +38,7 @@ def ko_load_dict(dict_path):
     """ Read the dictionary file and returns all words in it. """
     lang_dict = []
     with open(
-       resourcedir/ 'dicts' / dict_path,
+        resourcedir / 'dicts' / dict_path,
         "r",
         encoding="utf8",
         errors="ignore",

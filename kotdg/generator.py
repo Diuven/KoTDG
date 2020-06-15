@@ -123,8 +123,8 @@ class KoreanTextGenerator:
         #     self._save(index, img, meta)
         with Pool(self.threads) as pool:
             res = list(tqdm(
-                pool.imap_unordered(self._make, enumerate(self.gen.gen_args()))
-            ))
+                pool.imap_unordered(self._make, enumerate(self.gen.gen_args())),
+                total=len(self.gen)))
 
         labels = [tup for tup in self.gen.gen_meta()]
 

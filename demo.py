@@ -1,138 +1,25 @@
-# Demo of generating korean text images
-
-import trdg.generators
-from pathlib import Path
+from kotdg.generator import KoreanTextGenerator
+from kotdg.utils import *
 from glob import glob
-import os
-import random
-from kotdg.generator_legacy import KoreanTextGeneratorLegacy
-from kotdg.utils import ko_decompose
-
-demo_text = r"모든 사람은 자유로운 존재로 태어났고, 똑같은 존엄과 권리를 가진다. 사람은 이성과 양심을 타고 났으므로 서로를 형제애의 정신으로 대해야 한다." 
-
-out_path = Path("out")
-all_fonts = glob("resources/fonts/*")
+from random import getrandbits, random, sample
 
 
-def vanilla_demo():
-    print("Testing the original trdg generators!")
-
-    fonts = random.sample(all_fonts, 5)
-    # fonts = glob("resources/fonts/NanumGothic.ttf")
-
-    string_input = [[x] for x in demo_text.split(" ")]
-    random.shuffle(string_input)
-
-    print("Generating 5 samples with %s font!" % fonts)
-    print("Demo text: %s" % demo_text)
-    gen = trdg.generators.GeneratorFromStrings(
-        strings=string_input,
-        count=10,
-        fonts=fonts
-    )
-
-    print("Successfully generated generator")
-
-    if not os.path.isdir(out_path):
-        os.mkdir(out_path)
-
-    for a in gen:
-        print(a)
-        a[0].save(out_path / (a[1][0] + '.jpg'))
-        a[0].show()
-    
-    print("Done!")
-
-
-def kotdg_gen():
-    print("Testing kotdg generators!")
-
-    fonts = random.sample(all_fonts, 5)
-
-    string_input = [[x] for x in demo_text.split(" ")]
-    random.shuffle(string_input)
-
-
-    gen5 = KoreanTextGeneratorLegacy("file", fonts=fonts, count=3, dict='words.txt')
-
-    for e in gen5:
-        print(e)
-        e[0].show()
-
-    gen4 = KoreanTextGeneratorLegacy("wiki", fonts=fonts, count=3)
-
-    for d in gen4:
-        print(d)
-        d[0].show()
-
-    gen3 = KoreanTextGeneratorLegacy("dict", fonts=fonts, count=3, dict='words.txt')
-
-    for c in gen3:
-        print(c)
-        c[0].show()
-
-    gen2 = KoreanTextGeneratorLegacy("random", fonts=fonts, count=3, length=3)
-
-    for b in gen2:
-        print(b)
-        b[0].show()
-
-    gen1 = KoreanTextGeneratorLegacy("string", strings=string_input, fonts=fonts, count=3)
-
-    for a in gen1:
-        print(a)
-        # a[0].save(out_path / (a[1][0] + '.jpg'))
-        a[0].show()
-
-    print("Done!")
-
-
-def hd_gen():
-
-    idx = 0
-    sz = 128
-
-    font = all_fonts[32]
-
-    gen1 = KoreanTextGeneratorLegacy("file", fonts=[font], dict='ksx1001.txt', count=5, width=sz, size=sz)
-
-    for dat in gen1:
-        name = out_path / ('%08d.jpg' % idx)
-        # dat[0].save(name)
-        dat[0].show()
-        idx += 1
-
-        dec = ko_decompose(dat[1])
-        dec = ', '.join(dec)
-        label = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
-
-        print(label)
-        
-        break
-
-
-
-    gen2 = KoreanTextGeneratorLegacy("file", fonts=[font], dict='ksx1001.txt', count=5, width=sz // 2, size=sz // 2)
-
-    for dat in gen2:
-        name = out_path / ('%08d.jpg' % idx)
-        # dat[0].save(name)
-        dat[0].show()
-        idx += 1
-
-        dec = ko_decompose(dat[1])
-        dec = ', '.join(dec)
-        label = "%s, (%s), %08d, %s\n" % (dat[1], dec, idx, Path(font).stem)
-
-        print(label)
-        
-        break
-
-
-
+def get_color():
+    if random() < 0.5:
+        r, g, b = getrandbits(5), getrandbits(5), getrandbits(5)
+    else:
+        val = getrandbits(24)
+        r, g, b = val // (2**16), (val // (2**8)) % (2**8), val % (2**8)
+        if r+g+b > 128*3:
+            r, g, b = 255 - r, 255 - g, 255 - b
+    return "#%02X%02X%02X" % (r, g, b)
 
 
 if __name__ == "__main__":
-    # vanilla_demo()
-    # kotdg_gen()
-    hd_gen()
+    strings = ko_load_dict('ksx1001.txt')
+    fonts = glob("resources/fonts/*.[o,t]tf")
+    fonts = sample(fonts, 50)
+    gen = KoreanTextGenerator(
+        'out/test', 100, (224, 224), strings, fonts,
+        features={'get_color': get_color, 'blur': 2})
+    labels = gen.generate()
