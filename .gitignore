@@ -109,4 +109,4 @@ out/
 # notebookx
 **/*.ipynb
 
-resources/fonts/
+resources/fonts*
