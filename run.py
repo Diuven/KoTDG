@@ -98,45 +98,101 @@ def main():
     if args.case == "lower":
         strings = [x.lower() for x in strings]
 
+    if args.rand_color:
+        def get_color():
+            if rnd.random() < 0.5:
+                r, g, b = rnd.getrandbits(5), rnd.getrandbits(5), rnd.getrandbits(5)
+            else:
+                val = rnd.getrandbits(24)
+                r, g, b = val // (2**16), (val // (2**8)) % (2**8), val % (2**8)
+                if r+g+b > 128*3:
+                    r, g, b = 255 - r, 255 - g, 255 - b
+            return "#%02X%02X%02X" % (r, g, b)
+    else:
+        def get_color():
+            return args.text_color
+
+    if args.rand_back:
+        def get_back():
+            # img_cnt = len(glob(str(resource_dir / 'images/*.jpg')))
+            val = rnd.randrange(0, 10)
+            return min(3, val)
+    else:
+        def get_back():
+            return args.background
+
     string_count = len(strings)
 
-    p = Pool(args.thread_count)
-    for _ in tqdm(
-            p.imap_unordered(
-                FakeTextDataGenerator.generate_from_tuple,
-                zip(
-                    [i for i in range(0, string_count)],
-                    strings,
-                    [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
-                    [args.output_dir] * string_count,
-                    [args.format] * string_count,
-                    [args.extension] * string_count,
-                    [args.skew_angle] * string_count,
-                    [args.random_skew] * string_count,
-                    [args.blur] * string_count,
-                    [args.random_blur] * string_count,
-                    [args.background] * string_count,
-                    [args.distorsion] * string_count,
-                    [args.distorsion_orientation] * string_count,
-                    [args.handwritten] * string_count,
-                    [args.name_format] * string_count,
-                    [args.width] * string_count,
-                    [args.alignment] * string_count,
-                    [args.text_color] * string_count,
-                    [args.orientation] * string_count,
-                    [args.space_width] * string_count,
-                    [args.character_spacing] * string_count,
-                    [args.margins] * string_count,
-                    [args.fit] * string_count,
-                    [args.output_mask] * string_count,
-                    [args.word_split] * string_count,
-                    [args.image_dir] * string_count,
-                ),
-            ),
-            total=args.count,
-    ):
-        pass
-    p.terminate()
+    with Pool(args.thread_count) as pool:
+        def gen_tuple():
+            for idx, text in enumerate(strings):
+                yield (
+                    idx + args.start,
+                    text,
+                    fonts[rnd.randrange(0, len(fonts))],
+                    args.output_dir,
+                    args.format,
+                    args.extension,
+                    args.skew_angle,
+                    args.random_skew,
+                    args.blur,
+                    args.random_blur,
+                    get_back(),
+                    args.distorsion,
+                    args.distorsion_orientation,
+                    args.handwritten,
+                    args.name_format,
+                    args.width,
+                    args.alignment,
+                    get_color(),
+                    args.orientation,
+                    args.space_width,
+                    args.character_spacing,
+                    args.margins,
+                    args.fit,
+                    args.output_mask,
+                    args.word_split,
+                    args.image_dir
+                )
+        res = list(tqdm(
+            pool.imap_unordered(FakeTextDataGenerator.generate_from_tuple, gen_tuple()),
+            total=args.count))
+
+        # for _ in tqdm(
+        #         pool.imap_unordered(
+        #             FakeTextDataGenerator.generate_from_tuple,
+        #             zip(
+        #                 [i for i in range(0, string_count)],
+        #                 strings,
+        #                 [fonts[rnd.randrange(0, len(fonts))] for _ in range(0, string_count)],
+        #                 [args.output_dir] * string_count,
+        #                 [args.format] * string_count,
+        #                 [args.extension] * string_count,
+        #                 [args.skew_angle] * string_count,
+        #                 [args.random_skew] * string_count,
+        #                 [args.blur] * string_count,
+        #                 [args.random_blur] * string_count,
+        #                 [args.background] * string_count,
+        #                 [args.distorsion] * string_count,
+        #                 [args.distorsion_orientation] * string_count,
+        #                 [args.handwritten] * string_count,
+        #                 [args.name_format] * string_count,
+        #                 [args.width] * string_count,
+        #                 [args.alignment] * string_count,
+        #                 [args.text_color] * string_count,
+        #                 [args.orientation] * string_count,
+        #                 [args.space_width] * string_count,
+        #                 [args.character_spacing] * string_count,
+        #                 [args.margins] * string_count,
+        #                 [args.fit] * string_count,
+        #                 [args.output_mask] * string_count,
+        #                 [args.word_split] * string_count,
+        #                 [args.image_dir] * string_count,
+        #             ),
+        #         ),
+        #         total=args.count,
+        # ):
+        #     pass
 
     if args.name_format == 2:
         # Create file with filename-to-label connections

@@ -3,9 +3,10 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
+project_dir = Path(os.path.split(os.path.realpath(__file__))[0]) / ".."
 
 def margins(margin):
     margins = margin.split(",")
@@ -26,10 +27,15 @@ def argument_parser():
     )
 
     """
+        Options you really want to change
+    """
+    core_g = parser.add_argument_group("core", "Core Configurations")
+
+    """
         Output configuration (count, directory, extension, ...)
     """
     output_g = parser.add_argument_group("output", "Output Configurations")
-    output_g.add_argument(
+    core_g.add_argument(
         "-c",
         "--count",
         type=int,
@@ -37,7 +43,8 @@ def argument_parser():
         help="The number of images to be created.",
         required=True,
     )
-    output_g.add_argument(
+    core_g.add_argument(
+        "-out",
         "--output_dir",
         type=str,
         nargs="?",
@@ -78,7 +85,7 @@ def argument_parser():
             0: [TEXT]_[ID].[EXT],\
             1: [ID]_[TEXT].[EXT],\
             2: [ID].[EXT] + one file labels.txt containing id-to-label mappings",
-        default=0,
+        default=1,
     )
 
     """
@@ -108,7 +115,7 @@ def argument_parser():
         type=str,
         help="Specify the name of the dictionary to be used.\
             Each lines are separated by .splitlines(), and the orders of the lines are scrambled.",
-        default="words.txt"
+        default="ksx1001.txt"
     )
     source_ex.add_argument(
         "-rs",
@@ -190,7 +197,7 @@ def argument_parser():
         help="Define font to be used",
         default="NanumGothic.ttf"
     )
-    text_g.add_argument(
+    core_g.add_argument(
         "-fd",
         "--font_dir",
         type=str,
@@ -224,9 +231,10 @@ def argument_parser():
         # Image constructions (skewness, size, background, ...)
     """
     image_g = parser.add_argument_group("image", "Image construction details")
-    image_g.add_argument(
+    core_g.add_argument(
         "-f",
         "--format",
+        "--height",
         type=int,
         nargs="?",
         help="Define the height of the produced images if horizontal, else the width",
@@ -330,20 +338,39 @@ def argument_parser():
         type=str,
         nargs="?",
         help="Define an image directory to use when background is set to image",
-        default=os.path.join(os.path.split(os.path.realpath(__file__))[0], "images"),
+        default=os.path.join(project_dir, "resources", "images"),
     )
 
     """
         Others
     """
     others_g = parser.add_argument_group("others", "Other configurations")
-    others_g.add_argument(
+    core_g.add_argument(
         "-t",
         "--thread_count",
         type=int,
         nargs="?",
         help="Define the number of thread to use for image generation",
         default=1,
+    )
+
+    core_g.add_argument(
+        "--rand_color",
+        action="store_true",
+        help="Use built-in random color generator for text color",
+        default=False
+    )
+    core_g.add_argument(
+        "--rand_back",
+        action="store_true",
+        help="Use random background image",
+        default=False
+    )
+    core_g.add_argument(
+        "--start",
+        type=int,
+        help="Index to start from",
+        default=0
     )
 
     return parser

@@ -18,7 +18,7 @@ def get_color():
 if __name__ == "__main__":
     strings = ko_load_dict('ksx1001.txt')
     fonts = glob("resources/fonts/*.[o,t]tf")
-    fonts = sample(fonts, 50)
+    # fonts = sample(fonts, )
     gen = KoreanTextGenerator(
         'out/test', 100, (224, 224), strings, fonts,
         features={'get_color': get_color, 'blur': 2})
