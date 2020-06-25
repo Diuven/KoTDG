@@ -9,7 +9,7 @@ RVALID=2
 RTESTS=1
 DIR="out/ksxaug/"
 FONTDIR="resources/fonts/easy"
-THREADS=3
+THREADS=32
 
 echo "Generating train dataset"
 python3 run.py --height 224 --width 224 --rand_color --rand_back -t $THREADS --output_dir $DIR/train --font_dir $FONTDIR --count $(expr $COUNT20 "*" $RTRAIN)
