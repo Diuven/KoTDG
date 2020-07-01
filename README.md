@@ -12,7 +12,7 @@ You may add more resources in the corresponding folders.
 
 ## How to use
 
-Run `python build.py` to build preconfigured datasets. You can refer to the `build.py` to write your own datasets.
+Run `builds/ksx*.sh` to build preconfigured datasets.
 
 ### CLI
 

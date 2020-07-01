@@ -1,4 +1,5 @@
 # Building dataset for Text Recognition
+# NOTE: This would probably not work.
 
 from kotdg.generator_legacy import KoreanTextGeneratorLegacy
 from kotdg.utils import decompose_hangul
